@@ -36,12 +36,7 @@ const KNOWLEDGE_BASE: { [key: string]: string } = {
   "form 6": "Form 6 is used to register as a new voter or to shift your voter registration to a new constituency. You can fill it online at nvsp.in or at your nearest Electoral Registration Officer.",
 };
 
-const SUGGESTED_PROMPTS = [
-  "How do I register?",
-  "Am I eligible?",
-  "What documents do I need?",
-  "What is NOTA?"
-];
+
 
 interface Message {
   id: string;
@@ -237,18 +232,28 @@ export default function VoteBuddy() {
               )}
             </div>
 
-            {/* Suggestions */}
-            {messages.length < 3 && !isTyping && (
-              <div className="px-4 pb-2 flex flex-wrap gap-2">
-                {SUGGESTED_PROMPTS.map((prompt) => (
-                  <button
-                    key={prompt}
-                    onClick={() => handleSendMessage(prompt)}
-                    className="text-[11px] px-3 py-1.5 rounded-full bg-[var(--foreground)]/5 border border-[var(--glass-border)] hover:bg-[var(--primary)] hover:text-white hover:border-transparent transition-all cursor-pointer"
-                  >
-                    {prompt}
-                  </button>
-                ))}
+            {/* Try Sample Questions */}
+            {!isTyping && (
+              <div className="px-4 pb-3 pt-2 bg-[var(--foreground)]/5 border-t border-[var(--glass-border)]">
+                <Typography variant="body" className="text-[10px] uppercase font-bold tracking-wider mb-2 text-[var(--foreground)]/50">
+                  Try Sample Questions
+                </Typography>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "What is NOTA?",
+                    "Documents required to vote",
+                    "How to register as a voter",
+                    "Who is eligible to vote in India?"
+                  ].map((question) => (
+                    <button
+                      key={question}
+                      onClick={() => handleSendMessage(question)}
+                      className="text-[11px] px-3 py-1.5 rounded-lg bg-[var(--background)] border border-[var(--glass-border)] hover:bg-[var(--primary)] hover:text-white hover:border-[var(--primary)] transition-all cursor-pointer shadow-sm text-left"
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
