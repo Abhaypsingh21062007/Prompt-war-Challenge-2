@@ -21,6 +21,7 @@ export default function FindConstituency() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PincodeData | null>(null);
+  const [detectedLocation, setDetectedLocation] = useState<{city: string, state: string} | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSearch = (code: string) => {
@@ -65,9 +66,10 @@ export default function FindConstituency() {
     }, 1500);
   };
 
-  const handleGeolocation = () => {
+  const handleGeolocation = async () => {
     setIsLoading(true);
     setError(null);
+    setDetectedLocation(null);
 
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser.");
@@ -76,17 +78,46 @@ export default function FindConstituency() {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        // In a real app, we would call an API like /api/reverse-geocode?lat=...&lng=...
-        // For this demo, we'll mock a successful location detection to 110001
-        setTimeout(() => {
-          handleSearch("110001");
-        }, 1500);
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          
+          const response = await fetch('/api/geocode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lat: latitude, lng: longitude }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "Failed to get pincode from location");
+          }
+
+          if (data.pincode) {
+            setPincode(data.pincode); // Auto-fill the pincode input field
+            if (data.city && data.state) {
+              setDetectedLocation({ city: data.city, state: data.state });
+            }
+            handleSearch(data.pincode); // Automatically trigger search
+          } else {
+            throw new Error("Pincode not found for this location");
+          }
+        } catch (err: any) {
+          setError(err.message || "An error occurred while detecting location.");
+          setIsLoading(false);
+        }
       },
       (err) => {
-        setError("Unable to retrieve your location. Please enter your PIN code manually.");
+        let msg = "Unable to retrieve your location. Please enter your PIN code manually.";
+        if (err.code === 1) msg = "Location permission denied. Please enter your PIN code manually.";
+        else if (err.code === 2) msg = "Location information is unavailable.";
+        else if (err.code === 3) msg = "The request to get user location timed out.";
+        
+        setError(msg);
         setIsLoading(false);
-      }
+      },
+      { timeout: 10000 }
     );
   };
 
@@ -94,6 +125,7 @@ export default function FindConstituency() {
     setResult(null);
     setPincode('');
     setError(null);
+    setDetectedLocation(null);
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
@@ -147,8 +179,8 @@ export default function FindConstituency() {
                     disabled={isLoading}
                     className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl bg-[var(--foreground)]/5 border border-[var(--glass-border)] hover:bg-[var(--foreground)]/10 transition-all font-bold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
                   >
-                    <Navigation size={20} className="text-[var(--primary)] group-hover:animate-pulse" />
-                    {isLoading ? "Locating..." : "Use My Current Location"}
+                    <span>📍</span>
+                    {isLoading ? "Detecting location..." : "Detect My Location"}
                   </button>
                 </div>
 
@@ -202,7 +234,14 @@ export default function FindConstituency() {
                     <div>
                       <Typography variant="caption" className="uppercase tracking-widest text-[var(--primary)] font-bold mb-1">Your Constituency</Typography>
                       <Typography variant="h1" className="text-3xl md:text-4xl">{result.constituency}</Typography>
-                      <Typography variant="body" className="opacity-40">{result.state} • PIN {result.pincode}</Typography>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <Typography variant="body" className="opacity-40">{result.state} • PIN {result.pincode}</Typography>
+                        {detectedLocation && (
+                          <span className="px-2 py-0.5 rounded-full bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[var(--primary)] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+                            <span>📍</span> Auto-Detected: {detectedLocation.city}, {detectedLocation.state}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <button 
