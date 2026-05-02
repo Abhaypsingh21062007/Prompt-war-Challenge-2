@@ -207,9 +207,9 @@ export default function HeroSection() {
           className="mt-16 flex flex-wrap justify-center gap-8 text-sm"
         >
           {[
-            { label: 'Unbiased Analysis', emoji: '🎯' },
-            { label: 'Fact-Checked', emoji: '✅' },
-            { label: 'Real-Time Data', emoji: '⚡' },
+            { label: '100% Unbiased & Neutral', emoji: '🎯' },
+            { label: 'ECI-Verified & Fact-Checked', emoji: '✅' },
+            { label: 'Real-Time Election Intelligence', emoji: '⚡' },
           ].map(({ label, emoji }) => (
             <div
               key={label}
