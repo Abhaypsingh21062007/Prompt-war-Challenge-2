@@ -26,11 +26,6 @@ export default function FindConstituency() {
   const [detectedLocation, setDetectedLocation] = useState<{city: string, state: string} | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
-  });
-
   const handleSearch = async (code: string) => {
     if (!/^\d{6}$/.test(code)) {
       setError("Please enter a valid 6-digit PIN code.");
@@ -311,91 +306,38 @@ export default function FindConstituency() {
                   </div>
                 </div>
 
-                {/* Google Maps Integration */}
-                {(isLoaded && result.lat && result.lng) ? (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-12 space-y-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <MapIcon size={18} className="text-[var(--primary)]" />
-                        <Typography variant="h4" className="text-sm uppercase tracking-widest opacity-60">Interactive Map View</Typography>
-                      </div>
-                      <a 
-                        href={`https://www.google.com/maps/search/?api=1&query=${result.lat},${result.lng}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[var(--primary)] text-xs font-bold flex items-center gap-1 hover:underline"
-                      >
-                        Open in Google Maps <ExternalLink size={12} />
-                      </a>
+                {/* Google Maps Integration (Keyless Iframe Fallback) */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-12 space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <MapIcon size={18} className="text-[var(--primary)]" />
+                      <Typography variant="h4" className="text-sm uppercase tracking-widest opacity-60">Interactive Map View</Typography>
                     </div>
-                    <div className="w-full h-80 rounded-[2rem] overflow-hidden border border-[var(--glass-border)] shadow-xl relative group">
-                      <GoogleMap
-                        mapContainerStyle={{ width: '100%', height: '100%' }}
-                        center={{ lat: result.lat, lng: result.lng }}
-                        zoom={14}
-                        options={{
-                          styles: [
-                            {
-                              "featureType": "all",
-                              "elementType": "labels.text.fill",
-                              "stylers": [{"color": "#ffffff"}, {"weight": "0.20"}]
-                            },
-                            {
-                              "featureType": "water",
-                              "elementType": "geometry",
-                              "stylers": [{"color": "#193341"}]
-                            },
-                            {
-                              "featureType": "landscape",
-                              "elementType": "geometry",
-                              "stylers": [{"color": "#2c5a71"}]
-                            }
-                          ],
-                          disableDefaultUI: true,
-                          zoomControl: true,
-                        }}
-                      >
-                        <Marker position={{ lat: result.lat, lng: result.lng }} />
-                      </GoogleMap>
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-12 space-y-4"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <MapIcon size={18} className="text-[var(--primary)]" />
-                        <Typography variant="h4" className="text-sm uppercase tracking-widest opacity-60">Interactive Map View</Typography>
-                      </div>
-                      <a 
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(result.constituency + ', ' + result.state)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[var(--primary)] text-xs font-bold flex items-center gap-1 hover:underline"
-                      >
-                        Open in Google Maps <ExternalLink size={12} />
-                      </a>
-                    </div>
-                    <div className="w-full h-80 rounded-[2rem] overflow-hidden border border-[var(--glass-border)] shadow-xl relative group">
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg)' }}
-                        loading="lazy"
-                        allowFullScreen
-                        referrerPolicy="no-referrer-when-downgrade"
-                        src={`https://maps.google.com/maps?q=${encodeURIComponent(result.constituency + ', ' + result.state)}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
-                      ></iframe>
-                    </div>
-                  </motion.div>
-                )}
+                    <a 
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(result.constituency + ', ' + result.state)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[var(--primary)] text-xs font-bold flex items-center gap-1 hover:underline"
+                    >
+                      Open in Google Maps <ExternalLink size={12} />
+                    </a>
+                  </div>
+                  <div className="w-full h-80 rounded-[2rem] overflow-hidden border border-[var(--glass-border)] shadow-xl relative group">
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg)' }}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(result.constituency + ', ' + result.state)}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                    ></iframe>
+                  </div>
+                </motion.div>
               </div>
             </div>
 
