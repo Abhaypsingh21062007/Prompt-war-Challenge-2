@@ -9,8 +9,10 @@ import {
   RefreshCcw, 
   ArrowRight,
   AlertCircle,
-  Map as MapIcon
+  Map as MapIcon,
+  ExternalLink
 } from 'lucide-react';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { cn } from '@/utils/cn';
 import { Typography } from '@/components/ui/Typography';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -24,7 +26,12 @@ export default function FindConstituency() {
   const [detectedLocation, setDetectedLocation] = useState<{city: string, state: string} | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleSearch = (code: string) => {
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
+  });
+
+  const handleSearch = async (code: string) => {
     if (!/^\d{6}$/.test(code)) {
       setError("Please enter a valid 6-digit PIN code.");
       return;
@@ -33,37 +40,46 @@ export default function FindConstituency() {
     setError(null);
     setIsLoading(true);
 
-    // Simulate network delay
-    setTimeout(() => {
-      const data = PINCODE_MAPPING[code];
-      if (data) {
-        setResult(data);
-      } else {
-        // Dynamic Generation Logic for demo purposes
-        // This ensures the user ALWAYS gets a result, making the app feel robust
-        const states = ["Maharashtra", "Delhi", "Karnataka", "Tamil Nadu", "Uttar Pradesh", "West Bengal", "Gujarat"];
-        const constituencies = ["Central District", "North West", "South East", "Urban Area", "City Center", "West Zone"];
-        
-        // Use the pincode to deterministically pick a state/constituency
-        const pinSum = code.split('').reduce((acc, char) => acc + parseInt(char), 0);
-        const stateIdx = pinSum % states.length;
-        const constIdx = (parseInt(code) % constituencies.length);
-        
-        const generatedData: PincodeData = {
-          pincode: code,
-          constituency: `${states[stateIdx]} ${constituencies[constIdx]}`,
-          state: states[stateIdx],
-          pollingBooth: `Community Center Hall, Sector ${code.slice(-2)}`,
-          candidates: [
-            { name: "Rahul Sharma", party: "PFP" },
-            { name: "Anjali Gupta", party: "NPA" },
-            { name: "Suresh Prabhu", party: "Independent" }
-          ]
-        };
-        setResult(generatedData);
+    try {
+      const localData = PINCODE_MAPPING[code];
+      if (localData) {
+        setResult(localData);
+        setIsLoading(false);
+        return;
       }
+
+      // Fallback to real Geocoding API for unknown pincodes
+      const response = await fetch('/api/geocode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pincode: code }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to find location details.");
+      }
+
+      // Generate realistic constituency data based on real city/state
+      const generatedData: PincodeData = {
+        pincode: code,
+        constituency: `${data.city} Constituency`,
+        state: data.state,
+        pollingBooth: `Govt. School, ${data.city}`,
+        candidates: [
+          { name: "Local Candidate A", party: "PFP" },
+          { name: "Local Candidate B", party: "NPA" }
+        ],
+        lat: data.lat,
+        lng: data.lng
+      };
+      setResult(generatedData);
+    } catch (err: any) {
+      setError(err.message || "An error occurred while fetching details.");
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   const handleGeolocation = async () => {
@@ -294,6 +310,60 @@ export default function FindConstituency() {
                     </div>
                   </div>
                 </div>
+
+                {/* Google Maps Integration */}
+                {isLoaded && result.lat && result.lng && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-12 space-y-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MapIcon size={18} className="text-[var(--primary)]" />
+                        <Typography variant="h4" className="text-sm uppercase tracking-widest opacity-60">Interactive Map View</Typography>
+                      </div>
+                      <a 
+                        href={`https://www.google.com/maps/search/?api=1&query=${result.lat},${result.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[var(--primary)] text-xs font-bold flex items-center gap-1 hover:underline"
+                      >
+                        Open in Google Maps <ExternalLink size={12} />
+                      </a>
+                    </div>
+                    <div className="w-full h-80 rounded-[2rem] overflow-hidden border border-[var(--glass-border)] shadow-xl relative group">
+                      <GoogleMap
+                        mapContainerStyle={{ width: '100%', height: '100%' }}
+                        center={{ lat: result.lat, lng: result.lng }}
+                        zoom={14}
+                        options={{
+                          styles: [
+                            {
+                              "featureType": "all",
+                              "elementType": "labels.text.fill",
+                              "stylers": [{"color": "#ffffff"}, {"weight": "0.20"}]
+                            },
+                            {
+                              "featureType": "water",
+                              "elementType": "geometry",
+                              "stylers": [{"color": "#193341"}]
+                            },
+                            {
+                              "featureType": "landscape",
+                              "elementType": "geometry",
+                              "stylers": [{"color": "#2c5a71"}]
+                            }
+                          ],
+                          disableDefaultUI: true,
+                          zoomControl: true,
+                        }}
+                      >
+                        <Marker position={{ lat: result.lat, lng: result.lng }} />
+                      </GoogleMap>
+                    </div>
+                  </motion.div>
+                )}
               </div>
             </div>
 

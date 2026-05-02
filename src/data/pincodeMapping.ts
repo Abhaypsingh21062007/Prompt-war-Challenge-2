@@ -4,6 +4,8 @@ export interface PincodeData {
   state: string;
   pollingBooth: string;
   candidates: Array<{ name: string; party: string }>;
+  lat?: number;
+  lng?: number;
 }
 
 export const PINCODE_MAPPING: Record<string, PincodeData> = {

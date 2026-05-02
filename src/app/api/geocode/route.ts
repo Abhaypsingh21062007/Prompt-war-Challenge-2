@@ -2,20 +2,24 @@ import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   try {
-    const { lat, lng } = await req.json();
-
-    if (!lat || !lng) {
-      return NextResponse.json({ error: 'Latitude and longitude are required' }, { status: 400 });
-    }
+    const { lat, lng, pincode: searchPincode } = await req.json();
 
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
       console.error("GOOGLE_MAPS_API_KEY is not defined.");
-      // Return a fallback pincode for demo purposes if API key is missing
-      return NextResponse.json({ pincode: "110001", city: "New Delhi", state: "Delhi" });
+      // Return a fallback for demo if key is missing
+      return NextResponse.json({ pincode: searchPincode || "110001", city: "New Delhi", state: "Delhi", lat: 28.6139, lng: 77.2090 });
     }
 
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
+    let url = "";
+    if (lat && lng) {
+      url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
+    } else if (searchPincode) {
+      url = `https://maps.googleapis.com/maps/api/geocode/json?components=postal_code:${searchPincode}|country:IN&key=${apiKey}`;
+    } else {
+      return NextResponse.json({ error: 'Latitude/longitude or pincode is required' }, { status: 400 });
+    }
+
     const response = await fetch(url);
     const data = await response.json();
 
@@ -47,7 +51,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Postal code not found for this location' }, { status: 404 });
     }
 
-    return NextResponse.json({ pincode, city, state });
+    const location = data.results[0].geometry.location;
+
+    return NextResponse.json({ 
+      pincode, 
+      city, 
+      state, 
+      lat: location.lat, 
+      lng: location.lng 
+    });
   } catch (error) {
     console.error('Error in geocode API:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
