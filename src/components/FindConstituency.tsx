@@ -26,6 +26,11 @@ export default function FindConstituency() {
   const [detectedLocation, setDetectedLocation] = useState<{city: string, state: string} | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
+  });
+
   const handleSearch = async (code: string) => {
     if (!/^\d{6}$/.test(code)) {
       setError("Please enter a valid 6-digit PIN code.");
@@ -318,7 +323,7 @@ export default function FindConstituency() {
                       <Typography variant="h4" className="text-sm uppercase tracking-widest opacity-60">Interactive Map View</Typography>
                     </div>
                     <a 
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(result.constituency + ', ' + result.state)}`}
+                      href={`https://www.google.com/maps/search/?api=1&query=${result.lat && result.lng ? `${result.lat},${result.lng}` : encodeURIComponent(result.constituency + ', ' + result.state)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[var(--primary)] text-xs font-bold flex items-center gap-1 hover:underline"
@@ -326,16 +331,36 @@ export default function FindConstituency() {
                       Open in Google Maps <ExternalLink size={12} />
                     </a>
                   </div>
-                  <div className="w-full h-80 rounded-[2rem] overflow-hidden border border-[var(--glass-border)] shadow-xl relative group">
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg)' }}
-                      loading="lazy"
-                      allowFullScreen
-                      referrerPolicy="no-referrer-when-downgrade"
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(result.constituency + ', ' + result.state)}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
-                    ></iframe>
+                  <div className="w-full h-80 rounded-[2rem] overflow-hidden border border-[var(--glass-border)] shadow-xl">
+                    {isLoaded && result.lat && result.lng ? (
+                      <GoogleMap
+                        mapContainerStyle={{ width: '100%', height: '100%' }}
+                        center={{ lat: result.lat, lng: result.lng }}
+                        zoom={14}
+                        options={{
+                          disableDefaultUI: false,
+                          zoomControl: true,
+                          streetViewControl: false,
+                          mapTypeControl: false,
+                          fullscreenControl: true,
+                        }}
+                      >
+                        <Marker 
+                          position={{ lat: result.lat, lng: result.lng }}
+                          title={result.constituency}
+                        />
+                      </GoogleMap>
+                    ) : (
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        loading="lazy"
+                        allowFullScreen
+                        referrerPolicy="no-referrer-when-downgrade"
+                        src={`https://maps.google.com/maps?q=${encodeURIComponent(result.constituency + ', ' + result.state)}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                      ></iframe>
+                    )}
                   </div>
                 </motion.div>
               </div>
