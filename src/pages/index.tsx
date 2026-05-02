@@ -13,6 +13,7 @@ import IssueTracking from '@/components/IssueTracking';
 import VoterStats from '@/components/VoterStats';
 import FAQ from '@/components/FAQ';
 import Newsletter from '@/components/Newsletter';
+import FindConstituency from '@/components/FindConstituency';
 import ProgressTracker from '@/components/ProgressTracker';
 import { Section } from '@/components/ui/Section';
 import { Typography } from '@/components/ui/Typography';
@@ -148,6 +149,13 @@ export default function Home() {
             </Typography>
           </div>
           <VoterStats />
+        </Section>
+      </motion.div>
+
+      {/* Find My Constituency Section */}
+      <motion.div {...revealProps} id="find-constituency">
+        <Section className="bg-[var(--foreground)]/5">
+          <FindConstituency />
         </Section>
       </motion.div>
 
