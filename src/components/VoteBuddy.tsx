@@ -241,9 +241,9 @@ export default function VoteBuddy() {
                 <div className="flex flex-wrap gap-2">
                   {[
                     "What is NOTA?",
-                    "Documents required to vote",
-                    "How to register as a voter",
-                    "Who is eligible to vote in India?"
+                    "What documents do I need to vote?",
+                    "How to register as a voter?",
+                    "Am I eligible to vote in India?"
                   ].map((question) => (
                     <button
                       key={question}
