@@ -45,7 +45,13 @@ export async function POST(req: Request) {
         if (component.types.includes('postal_code') && !pincode) {
           pincode = component.long_name;
         }
-        if (component.types.includes('locality') && !city) {
+        // Be more lenient with city detection
+        if (!city && (
+          component.types.includes('locality') || 
+          component.types.includes('sublocality_level_1') ||
+          component.types.includes('administrative_area_level_3') ||
+          component.types.includes('administrative_area_level_2')
+        )) {
           city = component.long_name;
         }
         if (component.types.includes('administrative_area_level_1') && !state) {
@@ -58,6 +64,9 @@ export async function POST(req: Request) {
     if (!pincode) {
       return NextResponse.json({ error: 'Postal code not found for this location' }, { status: 404 });
     }
+
+    // Fallback city name if still not found
+    if (!city) city = 'Unknown City';
 
     const location = data.results[0].geometry.location;
 
