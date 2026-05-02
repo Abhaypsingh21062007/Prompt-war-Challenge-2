@@ -3,7 +3,7 @@ import { Section } from '@/components/ui/Section';
 import { Typography } from '@/components/ui/Typography';
 import VotingEssentials from '@/components/VotingEssentials';
 import EligibilityChecker from '@/components/EligibilityChecker';
-import FindConstituency from '@/components/FindConstituency';
+
 import { motion } from 'framer-motion';
 
 const revealProps = {
@@ -37,10 +37,6 @@ export default function VoteKit() {
           </motion.div>
         </div>
 
-        {/* Find My Constituency Tool */}
-        <motion.div {...revealProps} className="mb-24">
-          <FindConstituency />
-        </motion.div>
 
         {/* Voting Essentials (Flashcards) */}
         <motion.div {...revealProps} id="essentials" className="mb-24">

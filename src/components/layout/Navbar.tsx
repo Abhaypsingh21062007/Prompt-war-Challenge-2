@@ -24,6 +24,7 @@ export default function Navbar() {
     { name: 'Candidates', href: '/candidates' },
     { name: 'Issues', href: '/issues' },
     { name: 'VoteKit', href: '/votekit' },
+    { name: '📍 Locate Me', href: '/locate' },
   ];
 
   return (
