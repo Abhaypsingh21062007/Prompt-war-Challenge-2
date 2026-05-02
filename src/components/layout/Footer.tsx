@@ -93,8 +93,13 @@ export default function Footer() {
             <Link href="/accessibility" className="hover:text-[var(--primary)] transition-colors">Accessibility Note</Link>
           </div>
           
-          <div className="flex items-center gap-1 text-xs text-[var(--foreground)]/30">
-            Made with <Heart size={12} className="text-red-500 fill-current" /> for a stronger democracy
+          <div className="flex flex-col items-end gap-1 text-xs text-[var(--foreground)]/30">
+            <div className="flex items-center gap-1">
+              Made with <Heart size={12} className="text-red-500 fill-current" /> for a stronger democracy
+            </div>
+            <div className="font-bold text-[var(--foreground)]/50">
+              Deployed by Abhay Pratap Singh
+            </div>
           </div>
         </div>
       </div>
