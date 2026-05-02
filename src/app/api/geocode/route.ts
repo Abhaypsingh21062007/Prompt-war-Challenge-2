@@ -23,8 +23,16 @@ export async function POST(req: Request) {
     const response = await fetch(url);
     const data = await response.json();
 
-    if (data.status !== 'OK' || !data.results || data.results.length === 0) {
-      return NextResponse.json({ error: 'Failed to geocode location' }, { status: 404 });
+    if (data.status !== 'OK') {
+      console.error('Google Maps API Error:', data);
+      return NextResponse.json({ 
+        error: `Google Maps Error: ${data.status}`,
+        details: data.error_message || 'No additional details'
+      }, { status: 400 });
+    }
+
+    if (!data.results || data.results.length === 0) {
+      return NextResponse.json({ error: 'No results found for this location' }, { status: 404 });
     }
 
     // Extract postal_code, city, and state from address components
