@@ -312,7 +312,7 @@ export default function FindConstituency() {
                 </div>
 
                 {/* Google Maps Integration */}
-                {isLoaded && result.lat && result.lng && (
+                {(isLoaded && result.lat && result.lng) ? (
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -361,6 +361,38 @@ export default function FindConstituency() {
                       >
                         <Marker position={{ lat: result.lat, lng: result.lng }} />
                       </GoogleMap>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-12 space-y-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <MapIcon size={18} className="text-[var(--primary)]" />
+                        <Typography variant="h4" className="text-sm uppercase tracking-widest opacity-60">Interactive Map View</Typography>
+                      </div>
+                      <a 
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(result.constituency + ', ' + result.state)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[var(--primary)] text-xs font-bold flex items-center gap-1 hover:underline"
+                      >
+                        Open in Google Maps <ExternalLink size={12} />
+                      </a>
+                    </div>
+                    <div className="w-full h-80 rounded-[2rem] overflow-hidden border border-[var(--glass-border)] shadow-xl relative group">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0, filter: 'invert(90%) hue-rotate(180deg)' }}
+                        loading="lazy"
+                        allowFullScreen
+                        referrerPolicy="no-referrer-when-downgrade"
+                        src={`https://maps.google.com/maps?q=${encodeURIComponent(result.constituency + ', ' + result.state)}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
+                      ></iframe>
                     </div>
                   </motion.div>
                 )}

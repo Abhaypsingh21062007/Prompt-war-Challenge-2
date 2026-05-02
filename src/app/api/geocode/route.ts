@@ -4,11 +4,32 @@ export async function POST(req: Request) {
   try {
     const { lat, lng, pincode: searchPincode } = await req.json();
 
+    // 1. Try free Postal API if we only have a pincode and no strict Google requirement
+    if (searchPincode) {
+      try {
+        const postalRes = await fetch(`https://api.postalpincode.in/pincode/${searchPincode}`);
+        const postalData = await postalRes.json();
+        
+        if (postalData && postalData[0].Status === 'Success') {
+          const postOffice = postalData[0].PostOffice[0];
+          return NextResponse.json({
+            pincode: searchPincode,
+            city: postOffice.District || postOffice.Region || postOffice.Block,
+            state: postOffice.State,
+            lat: null, // We don't get exact lat/lng, but we can use city/state for the map query
+            lng: null,
+            source: 'postal_api'
+          });
+        }
+      } catch (e) {
+        console.error("Postal API failed, falling back to Google Maps (if available)", e);
+      }
+    }
+
+    // 2. Google Maps API Logic (requires API Key)
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-    if (!apiKey) {
-      console.error("GOOGLE_MAPS_API_KEY is not defined.");
-      // Return a fallback for demo if key is missing
-      return NextResponse.json({ pincode: searchPincode || "110001", city: "New Delhi", state: "Delhi", lat: 28.6139, lng: 77.2090 });
+    if (!apiKey || apiKey === '%GOOGLE_MAPS_API_KEY%') {
+      return NextResponse.json({ error: 'Google Maps API Key is missing or invalid.' }, { status: 400 });
     }
 
     let url = "";
@@ -35,7 +56,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No results found for this location' }, { status: 404 });
     }
 
-    // Extract postal_code, city, and state from address components
+    // Extract postal_code, city, and state
     let pincode = '';
     let city = '';
     let state = '';
@@ -45,7 +66,6 @@ export async function POST(req: Request) {
         if (component.types.includes('postal_code') && !pincode) {
           pincode = component.long_name;
         }
-        // Be more lenient with city detection
         if (!city && (
           component.types.includes('locality') || 
           component.types.includes('sublocality_level_1') ||
@@ -61,21 +81,21 @@ export async function POST(req: Request) {
       if (pincode && city && state) break;
     }
 
-    if (!pincode) {
+    if (!pincode && !searchPincode) {
       return NextResponse.json({ error: 'Postal code not found for this location' }, { status: 404 });
     }
 
-    // Fallback city name if still not found
     if (!city) city = 'Unknown City';
 
     const location = data.results[0].geometry.location;
 
     return NextResponse.json({ 
-      pincode, 
+      pincode: pincode || searchPincode, 
       city, 
       state, 
       lat: location.lat, 
-      lng: location.lng 
+      lng: location.lng,
+      source: 'google_maps'
     });
   } catch (error) {
     console.error('Error in geocode API:', error);
