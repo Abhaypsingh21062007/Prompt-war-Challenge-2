@@ -1,20 +1,73 @@
+import { useState, useEffect } from 'react';
 import SEO from '@/components/SEO';
 import { Section } from '@/components/ui/Section';
 import { Typography } from '@/components/ui/Typography';
 import FindConstituency from '@/components/FindConstituency';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { MapPin } from 'lucide-react';
+import { MapPin, LogIn, Save } from 'lucide-react';
+import { auth, db } from '@/lib/firebase';
+import { signInWithPopup, signInWithRedirect, GoogleAuthProvider, User, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 export default function LocateMePage() {
+  const [user, setUser] = useState<User | null>(null);
+  const [savedData, setSavedData] = useState<any>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    if (!auth) return;
+
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        // Fetch saved constituency if available
+        const docRef = doc(db, 'users', currentUser.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setSavedData(docSnap.data().constituencyData);
+        }
+      }
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleGoogleLogin = async () => {
+    setIsLoggingIn(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      alert("Login Error: " + error.message);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleSaveConstituency = async (data: any) => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, 'users', user.uid), {
+        constituencyData: data,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      setSavedData(data);
+      alert("Constituency saved to your profile!");
+    } catch (error) {
+      console.error("Failed to save:", error);
+    }
+  };
+
   return (
     <>
       <SEO
         title="Locate Me - Find Your Constituency | Election Guide AI"
-        description="Enter your pincode or use GPS to instantly find your Lok Sabha constituency, polling booth, and local candidates."
+        description="Login, detect your location to find your constituency, and save it to your profile."
       />
 
-      {/* Hero Banner */}
       <Section className="pt-32 pb-8">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -22,7 +75,6 @@ export default function LocateMePage() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          {/* Pill badge */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -34,23 +86,70 @@ export default function LocateMePage() {
           </motion.div>
 
           <Typography variant="h1" className="mb-4">
-            Find Your <span className="text-gradient">Constituency</span>
+            Find & Save Your <span className="text-gradient">Constituency</span>
           </Typography>
           <Typography variant="lead" className="max-w-2xl mx-auto opacity-70">
-            Enter your 6-digit PIN code or tap <strong>Detect My Location</strong> to instantly
-            discover your Lok Sabha constituency, nearest polling booth, and registered candidates.
+            Login with Google, detect your location, and save your constituency details for quick access later.
           </Typography>
         </motion.div>
       </Section>
 
-      {/* Main Tool */}
       <Section className="pb-20">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2 }}
         >
-          <FindConstituency />
+          <AnimatePresence mode="wait">
+            {authLoading ? (
+               <motion.div 
+                 key="loader"
+                 initial={{ opacity: 0 }} 
+                 animate={{ opacity: 1 }} 
+                 exit={{ opacity: 0 }}
+                 className="flex flex-col items-center justify-center p-20"
+               >
+                 <div className="w-12 h-12 border-4 border-[var(--primary)] border-t-transparent rounded-full animate-spin mb-4" />
+                 <Typography variant="caption" className="font-bold tracking-widest uppercase opacity-50">Authenticating...</Typography>
+               </motion.div>
+            ) : !user ? (
+              <motion.div 
+                key="login"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="max-w-md mx-auto bg-[var(--glass-bg)] backdrop-blur-xl border border-[var(--glass-border)] rounded-[2.5rem] p-10 text-center shadow-2xl"
+              >
+                <div className="w-20 h-20 bg-[var(--primary)]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <LogIn size={40} className="text-[var(--primary)]" />
+                </div>
+                <Typography variant="h3" className="mb-2">Login Required</Typography>
+                <Typography variant="body" className="opacity-70 mb-8">
+                  Please log in to detect your location and save your constituency to your profile.
+                </Typography>
+                <button
+                  onClick={handleGoogleLogin}
+                  disabled={isLoggingIn}
+                  className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-[var(--primary)] text-white font-bold hover:shadow-[var(--primary)]/30 hover:shadow-xl transition-all"
+                >
+                  {isLoggingIn ? "Logging in..." : "Sign in with Google"}
+                </button>
+              </motion.div>
+            ) : (
+              <motion.div key="tool" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                {savedData && (
+                   <div className="max-w-4xl mx-auto mb-8 bg-green-500/10 border border-green-500/20 rounded-2xl p-4 flex items-center justify-between">
+                     <div>
+                       <Typography variant="h4" className="text-green-600 mb-1">Saved Constituency: {savedData.constituency}</Typography>
+                       <Typography variant="caption" className="text-green-600/70">PIN: {savedData.pincode}</Typography>
+                     </div>
+                     <MapPin className="text-green-500" />
+                   </div>
+                )}
+                <FindConstituency onResultFound={handleSaveConstituency} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </Section>
 
@@ -71,12 +170,6 @@ export default function LocateMePage() {
             </Link>
             <Link href="/votekit" className="px-6 py-3 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] hover:bg-[var(--foreground)]/10 transition-all font-bold text-sm">
               🗳️ VoteKit
-            </Link>
-            <Link href="/issues" className="px-6 py-3 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] hover:bg-[var(--foreground)]/10 transition-all font-bold text-sm">
-              📋 Issues
-            </Link>
-            <Link href="/candidates" className="px-6 py-3 rounded-xl border border-[var(--glass-border)] bg-[var(--glass-bg)] hover:bg-[var(--foreground)]/10 transition-all font-bold text-sm">
-              👥 Candidates
             </Link>
           </div>
         </motion.div>

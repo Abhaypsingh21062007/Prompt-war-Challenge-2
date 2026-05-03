@@ -1,27 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import HeroSection from '../src/components/HeroSection';
 
-// Mock framer-motion to avoid animation issues in tests
-jest.mock('framer-motion', () => {
-  return {
-    __esModule: true,
-    motion: {
-      div: require('react').forwardRef(({ children, ...props }: any, ref: any) => {
-        const { layoutId, variants, initial, animate, exit, transition, ...rest } = props;
-        return <div ref={ref} {...rest}>{children}</div>;
-      }),
-      span: require('react').forwardRef(({ children, ...props }: any, ref: any) => {
-        const { layoutId, variants, initial, animate, exit, transition, ...rest } = props;
-        return <span ref={ref} {...rest}>{children}</span>;
-      }),
-      button: require('react').forwardRef(({ children, ...props }: any, ref: any) => {
-        const { whileHover, whileTap, variants, ...rest } = props;
-        return <button ref={ref} {...rest}>{children}</button>;
-      }),
-    },
-  };
-});
-
+// Mock next/link to avoid issues with standard <a> tag mapping
 jest.mock('next/link', () => {
   return ({ children, href }: any) => {
     return <a href={href}>{children}</a>;

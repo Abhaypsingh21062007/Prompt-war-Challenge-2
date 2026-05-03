@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+const withPWAInit = require("next-pwa");
 
 const securityHeaders = [
   {
@@ -31,12 +32,13 @@ const securityHeaders = [
   },
   {
     key: 'Content-Security-Policy',
-    value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://maps.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://maps.gstatic.com https://maps.googleapis.com; font-src 'self'; connect-src 'self' https://maps.googleapis.com https://generativelanguage.googleapis.com; frame-src 'self';"
+    value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://maps.googleapis.com https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' blob: data: https://maps.gstatic.com https://maps.googleapis.com https://*.googleusercontent.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://maps.googleapis.com https://generativelanguage.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://*.firebaseio.com; frame-src 'self' https://*.firebaseapp.com;"
   }
 ];
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  turbopack: {},
   async headers() {
     return [
       {
@@ -47,4 +49,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+const withPWA = withPWAInit({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+});
+
+export default withPWA(nextConfig);

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '@/hooks/useTheme';
+import { useSession, signIn, signOut } from 'next-auth/react';
 import { 
   Menu, 
   X, 
@@ -10,12 +11,15 @@ import {
   Moon, 
   UserPlus, 
   Mic,
-  Zap
+  Zap,
+  LogIn,
+  LogOut
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 export default function Navbar() {
   const { theme, toggleTheme, mounted } = useTheme();
+  const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [isFirstVoter, setIsFirstVoter] = useState(false);
 
@@ -85,7 +89,7 @@ export default function Navbar() {
             </button>
 
             {/* Voice Assistant Placeholder */}
-            <button className="p-2 rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-[var(--foreground)]/40 hover:text-[var(--primary)] transition-all cursor-not-allowed group relative">
+            <button className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] text-[var(--foreground)]/40 hover:text-[var(--primary)] transition-all cursor-not-allowed group relative">
               <Mic size={16} />
               <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-[var(--foreground)] text-[var(--background)] text-[8px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                 Coming Soon
@@ -95,10 +99,29 @@ export default function Navbar() {
             {mounted && (
               <button 
                 onClick={toggleTheme}
-                className="p-2 rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer"
+                className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)] hover:bg-[var(--foreground)]/10 transition-colors cursor-pointer"
                 aria-label="Toggle Theme"
               >
                 {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+            )}
+
+            {/* Auth Button */}
+            {session ? (
+              <button
+                onClick={() => signOut()}
+                className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-sm font-bold border border-red-500/20"
+              >
+                <LogOut size={16} />
+                Logout
+              </button>
+            ) : (
+              <button
+                onClick={() => signIn('google')}
+                className="flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] rounded-xl bg-[var(--primary)] text-white hover:opacity-90 transition-all text-sm font-bold shadow-lg shadow-[var(--primary)]/20"
+              >
+                <LogIn size={16} />
+                Sign in with Google
               </button>
             )}
           </div>
@@ -108,7 +131,7 @@ export default function Navbar() {
             <button 
               onClick={() => setIsFirstVoter(!isFirstVoter)}
               className={cn(
-                "p-2 rounded-lg border",
+                "p-3 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg border",
                 isFirstVoter ? "bg-orange-500 text-white border-transparent" : "bg-[var(--foreground)]/5 border-[var(--glass-border)]"
               )}
             >
@@ -116,7 +139,7 @@ export default function Navbar() {
             </button>
             <button 
               onClick={() => setIsOpen(!isOpen)}
-              className="p-2 text-[var(--foreground)] focus:outline-none cursor-pointer"
+              className="p-3 min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--foreground)] focus:outline-none cursor-pointer rounded-lg bg-[var(--foreground)]/5 border border-[var(--glass-border)]"
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -145,6 +168,28 @@ export default function Navbar() {
                 </Link>
               ))}
               <div className="pt-4 border-t border-[var(--glass-border)]">
+                {session ? (
+                  <button 
+                    onClick={() => {
+                      signOut();
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center justify-center gap-2 py-3 w-full rounded-xl bg-red-500/10 text-red-500 font-bold mb-2"
+                  >
+                    <LogOut size={18} /> Logout
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => {
+                      signIn('google');
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center justify-center gap-2 py-3 w-full rounded-xl bg-[var(--primary)] text-white font-bold mb-2"
+                  >
+                    <LogIn size={18} /> Sign in with Google
+                  </button>
+                )}
+
                 {mounted && (
                   <button 
                     onClick={toggleTheme}

@@ -1,24 +1,26 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, 
   MapPin, 
-  Navigation, 
   Building2, 
   Users, 
   RefreshCcw, 
   ArrowRight,
   AlertCircle,
   Map as MapIcon,
-  ExternalLink
+  ExternalLink,
+  Save
 } from 'lucide-react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
-import { cn } from '@/utils/cn';
 import { Typography } from '@/components/ui/Typography';
-import { Card, CardContent } from '@/components/ui/Card';
 import { PINCODE_MAPPING, PincodeData } from '@/data/pincodeMapping';
 
-export default function FindConstituency() {
+interface FindConstituencyProps {
+  onResultFound?: (data: PincodeData) => void;
+}
+
+export default function FindConstituency({ onResultFound }: FindConstituencyProps) {
   const [pincode, setPincode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +46,7 @@ export default function FindConstituency() {
       const localData = PINCODE_MAPPING[code];
       if (localData) {
         setResult(localData);
+        if (onResultFound) onResultFound(localData);
         setIsLoading(false);
         return;
       }
@@ -75,6 +78,7 @@ export default function FindConstituency() {
         lng: data.lng
       };
       setResult(generatedData);
+      if (onResultFound) onResultFound(generatedData);
     } catch (err: any) {
       setError(err.message || "An error occurred while fetching details.");
     } finally {
@@ -260,12 +264,22 @@ export default function FindConstituency() {
                       </div>
                     </div>
                   </div>
-                  <button 
-                    onClick={resetSearch}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)] hover:bg-[var(--foreground)]/10 transition-all text-sm font-bold cursor-pointer"
-                  >
-                    <RefreshCcw size={16} /> Search Again
-                  </button>
+                  <div className="flex items-center gap-3">
+                    {onResultFound && (
+                      <button 
+                        onClick={() => onResultFound(result)}
+                        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 hover:bg-[var(--primary)]/20 transition-all text-sm font-bold cursor-pointer"
+                      >
+                        <Save size={16} /> Save
+                      </button>
+                    )}
+                    <button 
+                      onClick={resetSearch}
+                      className="flex items-center gap-2 px-6 py-3 rounded-xl bg-[var(--foreground)]/5 border border-[var(--glass-border)] hover:bg-[var(--foreground)]/10 transition-all text-sm font-bold cursor-pointer"
+                    >
+                      <RefreshCcw size={16} /> Search Again
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
